@@ -1,0 +1,6 @@
+workloads/
+*.lock
+.idea/
+dist/
+output/
+*.dot
