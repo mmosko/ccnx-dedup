@@ -1,3 +1,17 @@
+#  Copyright 2024 Marc Mosko
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import binascii
 from pathlib import Path
 from typing import Optional, Tuple
@@ -15,7 +29,7 @@ class StructuredDirectoryWriter(TreeIO.PacketDirectoryWriter, PacketReader):
     A structured directory writer puts objects in subdirectories based on a prefix of the name.
     """
 
-    def __init__(self, directory_root: str, link_named_objects: bool = False, signer: Optional[Signer]=None,
+    def __init__(self, directory_root: str, link_named_objects: bool = False, signer: Optional[Signer] = None,
                  bytes_per_level: int = 1, levels: int = 4):
         """
         Use 1 bytes per level (i.e. subdirectory names are '00' ... 'FF') and structure the
@@ -28,7 +42,8 @@ class StructuredDirectoryWriter(TreeIO.PacketDirectoryWriter, PacketReader):
         self._root_path = Path(directory_root)
         self._root_path.mkdir(parents=True, exist_ok=True)
 
-        TreeIO.PacketDirectoryWriter.__init__(self, directory=directory_root, link_named_objects=link_named_objects, signer=signer)
+        TreeIO.PacketDirectoryWriter.__init__(self, directory=directory_root, link_named_objects=link_named_objects,
+                                              signer=signer)
 
         # create directory if it does not exist, and ensures existing path is a directory
         self._bytes_per_level = bytes_per_level
@@ -77,4 +92,3 @@ class StructuredDirectoryWriter(TreeIO.PacketDirectoryWriter, PacketReader):
 
     def get(self, name: Name, hash_restriction: HashValue, locators: Optional[Locators] = None) -> Packet:
         pass
-
