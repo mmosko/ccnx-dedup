@@ -56,16 +56,16 @@ class TestDedupManifest(CcndupTestCase):
         dd_manifest = DedupManifest(output_buffer)
         fastcdc = FastCdc(chunk_writer=dd_manifest)
 
-        print("Dedup 2.7")
-        root_name_2_7 = Name.from_uri('ccnx:/patch-2.7.tar')
-        root_packet_2_7 = self._dedup_file(dd_manifest, fastcdc, root_name_2_7, signer,"../workloads/tar/patch-2.7.tar")
+        print("Dedup 2.7.4")
+        root_name_2_7 = Name.from_uri('ccnx:/patch-2.7.4.tar')
+        root_packet_2_7 = self._dedup_file(dd_manifest, fastcdc, root_name_2_7, signer,"../workloads/tar/patch-2.7.4.tar")
 
         print(f"Packet count = {len(output_buffer.packets)}, Hash count = {len(output_buffer.by_hash)}")
         print(f"Packet bytes = {output_buffer.total_bytes_by_packet}, Hash bytes = {output_buffer.total_bytes_by_hash}")
 
-        print("Dedup 2.7.4")
-        root_name_2_7_4 = Name.from_uri('ccnx:/patch-2.7.4.tar')
-        root_packet_2_7_4 = self._dedup_file(dd_manifest, fastcdc, root_name_2_7_4, signer,"../workloads/tar/patch-2.7.4.tar")
+        print("Dedup 2.7.5")
+        root_name_2_7_4 = Name.from_uri('ccnx:/patch-2.7.5.tar')
+        root_packet_2_7_4 = self._dedup_file(dd_manifest, fastcdc, root_name_2_7_4, signer,"../workloads/tar/patch-2.7.5.tar")
 
         print(f"Packet count = {len(output_buffer.packets)}, Hash count = {len(output_buffer.by_hash)}")
         print(f"Packet bytes = {output_buffer.total_bytes_by_packet}, Hash bytes = {output_buffer.total_bytes_by_hash}")

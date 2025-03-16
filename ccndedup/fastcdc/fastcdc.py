@@ -40,19 +40,22 @@ class FastCdc(Chunker):
     __MASK_A = np.uint64(0x0000d93003530000)
     __MASK_L = np.uint64(0x0000d90003530000)
 
-    __MIN_SIZE = 2048
+    __MIN_SIZE = 1400
     __MAX_SIZE = 65536
     __AVG_SIZE = 8192
 
     def __init__(self, chunk_writer: ChunkWriter):
         self._writer = chunk_writer
         self._counts: Dict[bytes, int] = {}
+        print(f"fastcdc logger name = {__name__}")
 
     def chunk_file(self, filename):
+        """Returns the file size"""
         self.logger.info("Chunking filename %s", filename)
         with open(filename, "rb") as fh:
             buffer = fh.read()
             self.chunk_buffer(buffer)
+            return len(buffer)
 
     def chunk_buffer(self, buffer: bytes):
         self.logger.info("Chunking buffer len %d", len(buffer))
@@ -66,7 +69,7 @@ class FastCdc(Chunker):
                 h[x] = 1
             else:
                 h[x] += 1
-        self.logger.info("histogram of substring occurances: %s", h)
+        print(f"histogram of substring occurances: {h}")
 
     def _save_substring(self, substring: FileChunk):
         self._writer.write(substring)
@@ -91,6 +94,7 @@ class FastCdc(Chunker):
     def _extract_substrings(self, buffer):
         start_pos = 0
         file_size = len(buffer)
+        total_substring_size = 0
         percent_increment = int(file_size * 0.10)
         next_percent = percent_increment
         while start_pos < file_size:
@@ -98,6 +102,7 @@ class FastCdc(Chunker):
             self.logger.debug("end_offset: %d", end_offset)
             end_pos = start_pos + end_offset
             substring = FileChunk(starting_position=start_pos, value=buffer[start_pos: end_pos])
+            total_substring_size += substring.value_len
             self._increment_counts(substring)
             self._save_substring(substring)
             self.logger.debug("substring: %s", substring)
@@ -106,6 +111,8 @@ class FastCdc(Chunker):
                 self.logger.info("percent done: %d", int(start_pos / file_size * 100))
                 next_percent += percent_increment
         self.logger.info("percent done: %d", int(start_pos / file_size * 100))
+        # print(f"Chunked buffer size {len(buffer)} total substring size {total_substring_size}")
+        assert len(buffer) == total_substring_size
 
     def _chunk(self, buffer):
         normal_size = self.__AVG_SIZE

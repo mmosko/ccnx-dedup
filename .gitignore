@@ -4,3 +4,4 @@ workloads/
 dist/
 output/
 *.dot
+__pycache__

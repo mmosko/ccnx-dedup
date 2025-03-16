@@ -54,6 +54,9 @@ class DedupManifest(ChunkWriter):
 
     def write(self, substring: FileChunk):
         self.logger.debug("Write %s", substring)
+
+        chunk_bytes = len(substring.value)
+
         mt = ManifestTree(
             data_input=MemoryReader(substring.value),
             packet_output=self._writer,
@@ -63,16 +66,17 @@ class DedupManifest(ChunkWriter):
         top_packet = mt.build_top()
         self.logger.debug("Top Manifest: %s", top_packet)
         self._validate(substring, top_packet)
-        chunk_bytes = len(substring.value)
         cm = ChunkMetadata(
             chunk_number=len(self._chunks),
             payload_bytes=chunk_bytes,
             content_object_hash=top_packet.content_object_hash()
         )
+
         self._chunks.append(cm)
         self._total_bytes += chunk_bytes
         self.logger.debug("Chunk meta  : %s", cm)
         self.logger.debug("Total bytes : %d", self._total_bytes)
+        # print(cm)
 
     def save(self, name: Name, signer: Optional[Signer]) -> Packet:
         options = ManifestTreeOptions(

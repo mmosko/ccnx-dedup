@@ -14,7 +14,7 @@
 
 import unittest
 
-from ccndedup.hash_wrapper import fash_hash
+from ccndedup.core.hash_wrapper import fash_hash
 
 
 class TestHashWrapper(unittest.TestCase):
