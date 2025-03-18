@@ -11,8 +11,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import datetime
 import logging
+from pprint import pprint
 from typing import Dict
 
 import numpy as np
@@ -40,14 +41,19 @@ class FastCdc(Chunker):
     __MASK_A = np.uint64(0x0000d93003530000)
     __MASK_L = np.uint64(0x0000d90003530000)
 
-    __MIN_SIZE = 1400
+    # __MIN_SIZE = 2800
+    # __MAX_SIZE = 65536
+    # __AVG_SIZE = 8192
+
+    __MIN_SIZE = 4096
     __MAX_SIZE = 65536
     __AVG_SIZE = 8192
+
+    __MIN_PROGRESS_DELTA = datetime.timedelta(seconds=10)
 
     def __init__(self, chunk_writer: ChunkWriter):
         self._writer = chunk_writer
         self._counts: Dict[bytes, int] = {}
-        print(f"fastcdc logger name = {__name__}")
 
     def chunk_file(self, filename):
         """Returns the file size"""
@@ -69,7 +75,8 @@ class FastCdc(Chunker):
                 h[x] = 1
             else:
                 h[x] += 1
-        print(f"histogram of substring occurances: {h}")
+        # use pprint to get sorted keys
+        print(f"histogram of substring occurrences: {pprint(h)}")
 
     def _save_substring(self, substring: FileChunk):
         self._writer.write(substring)
@@ -91,15 +98,32 @@ class FastCdc(Chunker):
             return
         self._counts[substring.slow_hash] += 1
 
+    def _log_progress(self, start_time, start_pos, last_time, file_size):
+        # Only log progress if it has been at least 10 seconds since the last progress.
+        finish_time = datetime.datetime.now()
+        if finish_time - last_time < self.__MIN_PROGRESS_DELTA:
+            return last_time
+
+        delta = finish_time - start_time
+        seconds = delta.microseconds * 1E-6
+        mbps = file_size / seconds / 1000000.0
+
+        self.logger.info("percent done: %d, MB/sec: %s",
+                         int(start_pos / file_size * 100),
+                         "{:,.2f}".format(mbps))
+        return finish_time
+
     def _extract_substrings(self, buffer):
+        start_time = datetime.datetime.now()
+        last_time = start_time
         start_pos = 0
         file_size = len(buffer)
         total_substring_size = 0
         percent_increment = int(file_size * 0.10)
         next_percent = percent_increment
         while start_pos < file_size:
-            end_offset = self._chunk(buffer[start_pos:])
-            self.logger.debug("end_offset: %d", end_offset)
+            end_offset = self._chunk(buffer, start_pos)
+            # self.logger.debug("end_offset: %d", end_offset)
             end_pos = start_pos + end_offset
             substring = FileChunk(starting_position=start_pos, value=buffer[start_pos: end_pos])
             total_substring_size += substring.value_len
@@ -108,15 +132,18 @@ class FastCdc(Chunker):
             self.logger.debug("substring: %s", substring)
             start_pos = end_pos
             if start_pos > next_percent:
-                self.logger.info("percent done: %d", int(start_pos / file_size * 100))
+                last_time = self._log_progress(start_time, start_pos, last_time, file_size)
                 next_percent += percent_increment
-        self.logger.info("percent done: %d", int(start_pos / file_size * 100))
-        # print(f"Chunked buffer size {len(buffer)} total substring size {total_substring_size}")
-        assert len(buffer) == total_substring_size
+        # passing min for last_time forces it to log regardless of the timedelta.
+        self._log_progress(start_time, start_pos, datetime.datetime.min, file_size)
 
-    def _chunk(self, buffer):
+        # print(f"Chunked buffer size {len(buffer)} total substring size {total_substring_size}")
+        assert file_size == total_substring_size
+
+    def _chunk(self, buffer, start_pos):
         normal_size = self.__AVG_SIZE
-        n = len(buffer)
+        n = len(buffer) - start_pos
+        assert n > 0
         if n <= self.__MIN_SIZE:
             return n
         if n >= self.__MAX_SIZE:
@@ -128,13 +155,13 @@ class FastCdc(Chunker):
         i = self.__MIN_SIZE
 
         while i < normal_size:
-            fp = (fp << 1) + gears[buffer[i]]
+            fp = (fp << 1) + gears[buffer[start_pos + i]]
             if (fp & self.__MASK_S) == 0:
                 return i
             i += 1
 
         while i < n:
-            fp = (fp << 1) + gears[buffer[i]]
+            fp = (fp << 1) + gears[buffer[start_pos + i]]
             if (fp & self.__MASK_L) == 0:
                 return i
             i += 1

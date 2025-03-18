@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from cryptography.hazmat.primitives import hashes
-from spooky import hash128
+from spookyhash import hash128
 
 
 def fash_hash(s: bytes):
