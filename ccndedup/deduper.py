@@ -15,10 +15,11 @@ import logging
 import sys
 from typing import Tuple
 
-from ccnpy.core.Name import Name
+from ccnpy.core.Name import Name, NameComponent
 from ccnpy.core.Packet import Packet
 from ccnpy.crypto.RsaKey import RsaKey
 from ccnpy.crypto.RsaSha256 import RsaSha256Signer
+from ccnpy.flic.name_constructor.SchemaType import SchemaType
 from ccnpy.flic.tree.TreeIO import TreeIO
 
 from tests import MockKeys
@@ -88,19 +89,27 @@ class Deduper:
                 self._dedup(f)
 
     def _init_state(self):
-        self.output_buffer = TreeIO.PacketDirectoryWriter(directory="/data/dedup-experiment/output", link_named_objects=True,
+        self.output_buffer = TreeIO.PacketDirectoryWriter(directory="../dedup-experiment/output", link_named_objects=True,
                                                           nested=True)
-        self.dd_manifest = DedupManifest(self.output_buffer)
-        self.fastcdc = FastCdc(chunk_writer=self.dd_manifest)
+        self.dd_manifest = None
+        self.fastcdc = None
 
     def _dedup(self, name):
         print(f"Dedup {name}")
-        root_name = Name.from_uri(f'ccnx:/{name}')
+        schema_type = SchemaType.SEGMENTED
+        data_name = Name.from_uri(f'ccnx:/com/objectstore/gnu/{name}')
+        manifest_name = Name.from_uri(f'ccnx:/com/objectstore/gnu/{name}/m')
+
+        self.dd_manifest = DedupManifest(self.output_buffer, schema_type=schema_type,
+                                         data_prefix=data_name, manifest_prefix=manifest_name)
+
+        self.fastcdc = FastCdc(chunk_writer=self.dd_manifest)
+
         root_packet, file_size = self._dedup_file(dd_manifest=self.dd_manifest,
                                                   fastcdc=self.fastcdc,
-                                                  root_name=root_name,
+                                                  root_name=manifest_name,
                                                   signer=self.signer,
-                                                  filename=f"/data/dedup-experiment/workloads/tar/{name}")
+                                                  filename=f"../dedup-experiment/workloads/tar/{name}")
 
         print(f"Root packet = {root_packet.content_object_hash().value().tobytes().hex()}")
         # print(f"Packet count = {len(self.output_buffer.packets)}, Hash count = {len(self.output_buffer.by_hash)}")

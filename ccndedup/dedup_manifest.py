@@ -34,15 +34,19 @@ from .core.memory_reader import MemoryReader
 class DedupManifest(ChunkWriter):
     logger = logging.getLogger(__name__)
 
-    def __init__(self, output: PacketWriter):
+    def __init__(self, output: PacketWriter, schema_type: SchemaType = SchemaType.HASHED,
+                 data_prefix: Name = None, manifest_prefix: Name = None):
         # self._packets: List[Packet] = []
         self._chunks: List[ChunkMetadata] = []
         self._total_bytes = 0
+        if data_prefix is None:
+            data_prefix = Name()
 
         self._tree_options = ManifestTreeOptions(
-            name=Name(),
+            name=data_prefix,
+            manifest_prefix = manifest_prefix,
             data_expiry_time=None,
-            schema_type=SchemaType.HASHED,
+            schema_type=schema_type,
             signer=None,
             add_node_subtree_size=True,
             max_packet_size=1500)
