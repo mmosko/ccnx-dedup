@@ -1,4 +1,3 @@
-workloads/
 *.lock
 .idea/
 dist/
