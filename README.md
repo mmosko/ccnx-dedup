@@ -12,3 +12,13 @@ It is pretty alpha code and still in experimental stages.
 IEEE Transactions on Parallel and Distributed Systems 31, no. 9 (2020): 2017-2031.
 https://ranger.uta.edu/~jiang/publication/Journals/2020/2020-IEEE-TPDS(Wen%20Xia).pdf
 
+## Dependencies
+
+Make sure you have `python3-dev` installed, which is needed by spookyhash.
+
+## Running workloads
+
+```bash
+poetry run deduper
+```
+
