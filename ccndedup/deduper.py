@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import logging
+import sys
 from typing import Tuple
 
 from ccnpy.core.Name import Name
@@ -66,12 +67,12 @@ class Deduper:
             #     "binutils-2.43.1.tar",
             #     "binutils-2.44.tar"
             # ],
-            [
-                "emacs-29.1.tar",
-                "emacs-29.2.tar",
-                "emacs-29.3.tar",
-                "emacs-29.4.tar"
-                ],
+            # [
+            #     "emacs-29.1.tar",
+            #     "emacs-29.2.tar",
+            #     "emacs-29.3.tar",
+            #     "emacs-29.4.tar"
+            #     ],
             [
                 "gcc-12.1.0.tar",
                 "gcc-12.2.0.tar",
@@ -87,7 +88,7 @@ class Deduper:
                 self._dedup(f)
 
     def _init_state(self):
-        self.output_buffer = TreeIO.PacketDirectoryWriter(directory="../output", link_named_objects=True,
+        self.output_buffer = TreeIO.PacketDirectoryWriter(directory="../../dedup-experiment/output", link_named_objects=True,
                                                           nested=True)
         self.dd_manifest = DedupManifest(self.output_buffer)
         self.fastcdc = FastCdc(chunk_writer=self.dd_manifest)
@@ -99,7 +100,7 @@ class Deduper:
                                                   fastcdc=self.fastcdc,
                                                   root_name=root_name,
                                                   signer=self.signer,
-                                                  filename=f"../workloads/tar/{name}")
+                                                  filename=f"../../dedup-experiment/workloads/tar/{name}")
 
         print(f"Root packet = {root_packet.content_object_hash().value().tobytes().hex()}")
         # print(f"Packet count = {len(self.output_buffer.packets)}, Hash count = {len(self.output_buffer.by_hash)}")
@@ -119,9 +120,21 @@ class Deduper:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M',
+                        filename='/tmp/myapp.log',
+                        filemode='w')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console = logging.StreamHandler(sys.stdout)
+    console.setFormatter(formatter)
+    console.setLevel(logging.DEBUG)
+
+
     root_logger = logging.getLogger()
+    root_logger.addHandler(console)
     root_logger.setLevel(logging.INFO)
-    logging.getLogger('ccndedup.fastcdc.fastcdc').setLevel(logging.DEBUG)
+    logging.getLogger('ccndedup.fastcdc.fastcdc').setLevel(logging.INFO)
 
     dd = Deduper()
     dd.run()
