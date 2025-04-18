@@ -89,18 +89,22 @@ class Deduper:
                 self._dedup(f)
 
     def _init_state(self):
-        self.output_buffer = TreeIO.PacketDirectoryWriter(directory="../dedup-experiment/output", link_named_objects=True,
+        self.output_buffer = TreeIO.PacketDirectoryWriter(directory="/data/dedup-experiment/output", 
+                                                          link_named_objects=False,
                                                           nested=True)
         self.dd_manifest = None
         self.fastcdc = None
 
     def _dedup(self, name):
         print(f"Dedup {name}")
-        schema_type = SchemaType.SEGMENTED
-        data_name = Name.from_uri(f'ccnx:/com/objectstore/gnu/{name}')
-        manifest_name = Name.from_uri(f'ccnx:/com/objectstore/gnu/{name}/m')
+        #schema_type = SchemaType.SEGMENTED
+        schema_type = SchemaType.PREFIX
+        root_name = Name.from_uri(f'ccnx:/com/objectstore/gnu/{name}')
+        data_name = Name.from_uri(f'ccnx:/com/objectstore/gnu/')
+        manifest_name = Name.from_uri(f'ccnx:/com/objectstore/gnu/m')
 
         self.dd_manifest = DedupManifest(self.output_buffer, schema_type=schema_type,
+                                         root_name=root_name,
                                          data_prefix=data_name, manifest_prefix=manifest_name)
 
         self.fastcdc = FastCdc(chunk_writer=self.dd_manifest)
@@ -109,7 +113,7 @@ class Deduper:
                                                   fastcdc=self.fastcdc,
                                                   root_name=manifest_name,
                                                   signer=self.signer,
-                                                  filename=f"../dedup-experiment/workloads/tar/{name}")
+                                                  filename=f"/data/dedup-experiment/workloads/tar/{name}")
 
         print(f"Root packet = {root_packet.content_object_hash().value().tobytes().hex()}")
         # print(f"Packet count = {len(self.output_buffer.packets)}, Hash count = {len(self.output_buffer.by_hash)}")

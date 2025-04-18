@@ -35,16 +35,17 @@ class DedupManifest(ChunkWriter):
     logger = logging.getLogger(__name__)
 
     def __init__(self, output: PacketWriter, schema_type: SchemaType = SchemaType.HASHED,
-                 data_prefix: Name = None, manifest_prefix: Name = None):
+                 root_name: Name = None, data_prefix: Name = None, manifest_prefix: Name = None):
         # self._packets: List[Packet] = []
         self._chunks: List[ChunkMetadata] = []
         self._total_bytes = 0
-        if data_prefix is None:
-            data_prefix = Name()
+        if root_name is None:
+            root_name = Name()
 
         self._tree_options = ManifestTreeOptions(
-            name=data_prefix,
-            manifest_prefix = manifest_prefix,
+            name=root_name,
+            data_prefix=data_prefix,
+            manifest_prefix=manifest_prefix,
             data_expiry_time=None,
             schema_type=schema_type,
             signer=None,
